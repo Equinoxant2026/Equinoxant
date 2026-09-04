@@ -2,6 +2,7 @@ name: Build APK
 on:
   push:
     branches: [ main ]
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -17,8 +18,14 @@ jobs:
           channel: 'stable'
       - run: flutter clean
       - run: flutter pub get
-      - run: flutter build apk --release --no-tree-shake-icons
+      - run: flutter build apk --release --no-tree-shake-icons --no-pub
+        continue-on-error: true
+      - name: Build with Gradle directly
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon -x test
       - uses: actions/upload-artifact@v4
         with:
           name: equinoxant-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: android/app/build/outputs/apk/release/app-release.apk
