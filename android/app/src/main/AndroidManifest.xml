@@ -8,7 +8,7 @@
     <uses-feature android:name="android.hardware.camera.flash" />
 
     <application
-        android:label="equinoxant"
+        android:label="Equinoxant"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon">
         <activity
