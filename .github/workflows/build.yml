@@ -11,10 +11,11 @@ jobs:
           java-version: '17'
       - uses: subosito/flutter-action@v2
         with:
-          channel: 'stable'
+          flutter-version: '3.22.6'
+          cache: true
       - run: flutter pub get
       - run: flutter build apk --release
       - uses: actions/upload-artifact@v4
         with:
-          name: Equinoxant-APK
+          name: equinoxant-apk
           path: build/app/outputs/flutter-apk/app-release.apk
