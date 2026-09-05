@@ -7,6 +7,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Clean bad folders
+        run: rm -rf android/.kotlin android/.gradle
       - uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
@@ -17,7 +19,7 @@ jobs:
           channel: 'stable'
       - run: flutter clean
       - run: flutter pub get
-      - run: flutter build apk --release
+      - run: flutter build apk --release --no-tree-shake-icons
       - uses: actions/upload-artifact@v4
         with:
           name: equinoxant-apk
