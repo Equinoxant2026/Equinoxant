@@ -10,7 +10,7 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.2
-  flutter_blue_plus: ^1.32.13
+  flutter_blue_plus: 1.31.15
   torch_light: ^1.0.0
   app_settings: ^5.1.1
 
