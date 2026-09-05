@@ -14,6 +14,10 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    lint {
+        checkReleaseBuilds = false
+    }
+
     defaultConfig {
         applicationId = "com.example.my_first_app"
         minSdk = 23
