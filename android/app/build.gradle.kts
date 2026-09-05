@@ -13,15 +13,12 @@ android {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
     }
-
     kotlinOptions {
         jvmTarget = "1.8"
     }
 
     sourceSets {
-        getByName("main") {
-            java.srcDirs("src/main/kotlin")
-        }
+        getByName("main").java.srcDirs("src/main/kotlin")
     }
 
     defaultConfig {
@@ -42,5 +39,3 @@ android {
 flutter {
     source = "../.."
 }
-
-dependencies {}
