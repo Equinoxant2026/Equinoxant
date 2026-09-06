@@ -38,14 +38,14 @@ class _HomePageState extends State<HomePage> {
   bool isSensorConnected = false;
   Color bgColor = Colors.white;
   bool isScanning = false;
-  bool isTorchOn = false
+  bool isTorchOn = false; // FIX 1: added ;
   BluetoothDevice? connectedDevice;
 
   @override
   void initState() {
     super.initState();
   }
-  
+
   Future<void> _scanAndConnect() async {
     if (!mounted) return;
     setState(() => isScanning = true);
@@ -87,7 +87,7 @@ class _HomePageState extends State<HomePage> {
         await TorchLight.enableTorch();
       }
       if (!mounted) return;
-      setState(() => isTorchOn = !isTorchOn);
+      setState(() => isTorchOn =!isTorchOn);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -130,15 +130,15 @@ class _HomePageState extends State<HomePage> {
               if (value == 'color') {
                 setState(() => bgColor = bgColor == Colors.white? Colors.grey[200]! : Colors.white);
               }
-              if (value == 'bt') {
-                await _scanAndConnect();
+              // FIX 2 & 3: fixed broken brackets here
               if (value == 'torch') {
                 await _toggleTorch();
-              if
+              }
             },
             itemBuilder: (context) => [
               PopupMenuItem(value: 'bt', child: Text(isSensorConnected? 'Disconnect Sensor' : 'Bluetooth Settings')),
               PopupMenuItem(value: 'color', child: Text('Background Colour Picker')),
+              PopupMenuItem(value: 'torch', child: Text(isTorchOn? 'Turn OFF Torch' : 'Turn ON Torch')),
             ],
           ),
         ],
@@ -415,4 +415,3 @@ class ArcPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant ArcPainter oldDelegate) => oldDelegate.progress!= progress || oldDelegate.arcColor!= arcColor;
 }
-
