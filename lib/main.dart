@@ -38,9 +38,16 @@ class _HomePageState extends State<HomePage> {
   bool isSensorConnected = false;
   Color bgColor = Colors.white;
   bool isScanning = false;
+  bool isTorchOn = false
   BluetoothDevice? connectedDevice;
 
+  @override
+  void initState() {
+    super.initState();
+  }
+  
   Future<void> _scanAndConnect() async {
+    if (!mounted) return;
     setState(() => isScanning = true);
     try {
       await FlutterBluePlus.startScan(timeout: Duration(seconds: 10));
@@ -60,13 +67,40 @@ class _HomePageState extends State<HomePage> {
         }
       }
       await FlutterBluePlus.stopScan();
-    } catch (e) {}
+    } catch (e) {
+      print("Scan error: $e");
+    }
+    if (!mounted) return;
     setState(() => isScanning = false);
     if (!isSensorConnected) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Sensor not found. Check ESP32 is ON")),
       );
     }
+  }
+
+  Future<void> _toggleTorch() async {
+    try {
+      if (isTorchOn) {
+        await TorchLight.disableTorch();
+      } else {
+        await TorchLight.enableTorch();
+      }
+      if (!mounted) return;
+      setState(() => isTorchOn = !isTorchOn);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Torch not available: $e")),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    FlutterBluePlus.stopScan();
+    connectedDevice?.disconnect();
+    super.dispose();
   }
 
   @override
@@ -93,8 +127,14 @@ class _HomePageState extends State<HomePage> {
                   await _scanAndConnect();
                 }
               }
-              if (value == 'color')
+              if (value == 'color') {
                 setState(() => bgColor = bgColor == Colors.white? Colors.grey[200]! : Colors.white);
+              }
+              if (value == 'bt') {
+                await _scanAndConnect();
+              if (value == 'torch') {
+                await _toggleTorch();
+              if
             },
             itemBuilder: (context) => [
               PopupMenuItem(value: 'bt', child: Text(isSensorConnected? 'Disconnect Sensor' : 'Bluetooth Settings')),
