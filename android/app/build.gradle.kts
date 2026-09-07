@@ -6,12 +6,16 @@ plugins {
 
 android {
     namespace = "com.example.my_first_app"
-    compileSdk = flutter.compileSdkVersion
-    ndkVersion = "30.0.16138531"
+    compileSdk = 34
+    ndkVersion = flutter.ndkVersion
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = "17"
     }
 
     lint {
@@ -21,13 +25,15 @@ android {
     defaultConfig {
         applicationId = "com.example.my_first_app"
         minSdk = 23
-        targetSdk = flutter.targetSdkVersion
+        targetSdk = 34
         versionCode = 1
         versionName = "1.0.0"
     }
 
     buildTypes {
         release {
+            minifyEnabled false
+            shrinkResources false
             signingConfig = signingConfigs.getByName("debug")
         }
     }
