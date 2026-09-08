@@ -356,8 +356,8 @@ class _TimerPageState extends State<TimerPage> {
           if (isWritingDetected) Positioned(top: 10, right: 50, child: Icon(Icons.edit, color: Colors.green, size: 30)),
           if (isWritingDetected) Positioned(top: 10, left: 0, right: 0, child: Center(child: Container(padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6), decoration: BoxDecoration(color: Colors.green, borderRadius: BorderRadius.circular(20)), child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.edit, color: Colors.white, size: 18), SizedBox(width: 4), Text("WRITING", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))])))),
           if (_waitingToResume) Positioned(top: 50, left: 0, right: 0, child: Center(child: Container(padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6), decoration: BoxDecoration(color: Colors.orange, borderRadius: BorderRadius.circular(20)), child: Text("RESUMING IN 1s...", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))))),
-          Positioned(left: 30, top: 80, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text("$seconds s", style: TextStyle(fontSize: 70, color: Colors.red, fontWeight: FontWeight.bold)), Text("${ms.toString().padLeft(2, '0')} ms", style: TextStyle(fontSize: 22, color: Colors.red))])),
-          Center(child: CustomPaint(size: Size(MediaQuery.of(context).size.width * 0.70, MediaQuery.of(context).size.width * 0.70), painter: ArcPainter(progress: progress, arcColor: _getArcColor(progress)))),
+          Positioned(left: 30, top: 80, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text("$seconds s", style: TextStyle(fontSize: 80, color: Colors.red, fontWeight: FontWeight.bold)), Text("${ms.toString().padLeft(2, '0')} ms", style: TextStyle(fontSize: 25, color: Colors.red))])),
+          Center(child: CustomPaint(size: Size(MediaQuery.of(context).size.width * 0.80, MediaQuery.of(context).size.width * 0.80), painter: ArcPainter(progress: progress, arcColor: _getArcColor(progress)))),
           Positioned(
             bottom: 60,
             left: MediaQuery.of(context).size.width / 2 - 20,
@@ -396,13 +396,13 @@ class ArcPainter extends CustomPainter {
     final radius = size.width / 2;
     final rect = Rect.fromCircle(center: center, radius: radius);
     // INCREASED WIDTH from 30 to 42
-    Paint basePaint = Paint()..color = Colors.grey[800]!..strokeWidth = 42..style = PaintingStyle.stroke..strokeCap = StrokeCap.round;
+    Paint basePaint = Paint()..color = Colors.grey[800]!..strokeWidth = 35..style = PaintingStyle.stroke..strokeCap = StrokeCap.round;
     canvas.drawArc(rect, pi, pi, false, basePaint);
-    Paint progressPaint = Paint()..color = arcColor..strokeWidth = 42..style = PaintingStyle.stroke..strokeCap = StrokeCap.round;
+    Paint progressPaint = Paint()..color = arcColor..strokeWidth = 35..style = PaintingStyle.stroke..strokeCap = StrokeCap.round;
     canvas.drawArc(rect, pi, pi * progress, false, progressPaint);
     double handAngle = pi - (pi * progress);
     Offset handEnd = Offset(center.dx + radius * cos(handAngle), center.dy - radius * sin(handAngle));
-    Paint handPaint = Paint()..color = Colors.grey..strokeWidth = 22;
+    Paint handPaint = Paint()..color = Colors.grey..strokeWidth = 30;
     canvas.drawLine(center, handEnd, handPaint);
   }
   @override
