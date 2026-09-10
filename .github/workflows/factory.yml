@@ -15,6 +15,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -22,20 +24,23 @@ jobs:
           python-version: '3.11'
           
       - name: Install libraries
-        run: |
-          pip install pymupdf openai
+        run: pip install pymupdf openai
           
-      - name: Run MERGED factory (AI if key, FREE if no key)
+      - name: Run factory
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        run: |
-          python pdf_to_factory.py
+        run: python pdf_to_factory.py
           
-      - name: Commit questions.json
+      - name: Upload questions.json as artifact (ALWAYS works)
+        uses: actions/upload-artifact@v4
+        with:
+          name: questions-json
+          path: assets/questions.json
+          
+      - name: Try to commit back to repo
         run: |
           git config user.name "factory-bot"
           git config user.email "bot@equinoxant.com"
-          mkdir -p assets
-          git add assets/questions.json
-          git commit -m "Auto-build questions.json - Merged mode" || echo "No changes"
-          git push
+          git add assets/questions.json || true
+          git commit -m "Auto-build questions.json" || true
+          git push || echo "Push failed but artifact saved - download it manually"
