@@ -7,6 +7,9 @@ on:
       - 'pdf_to_factory.py'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -36,4 +39,3 @@ jobs:
           git add assets/questions.json
           git commit -m "Auto-build questions.json - Merged mode" || echo "No changes"
           git push
-          
