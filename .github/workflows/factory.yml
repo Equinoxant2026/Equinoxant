@@ -1,0 +1,39 @@
+name: Build Questions JSON (Merged Free + AI)
+
+on:
+  push:
+    paths:
+      - 'book.pdf'
+      - 'pdf_to_factory.py'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          
+      - name: Install libraries
+        run: |
+          pip install pymupdf openai
+          
+      - name: Run MERGED factory (AI if key, FREE if no key)
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          python pdf_to_factory.py
+          
+      - name: Commit questions.json
+        run: |
+          git config user.name "factory-bot"
+          git config user.email "bot@equinoxant.com"
+          mkdir -p assets
+          git add assets/questions.json
+          git commit -m "Auto-build questions.json - Merged mode" || echo "No changes"
+          git push
+          
