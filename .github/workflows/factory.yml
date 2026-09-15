@@ -43,4 +43,5 @@ jobs:
           git config user.email "bot@equinoxant.com"
           git add assets/questions.json || true
           git commit -m "Auto-build questions.json" || true
+          git pull --release origin main
           git push || echo "Push failed but artifact saved - download it manually"
