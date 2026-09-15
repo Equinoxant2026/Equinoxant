@@ -2,11 +2,9 @@ name: Build Questions JSON (Merged Free + AI)
 
 on:
   push:
-    paths:
-      - 'book.pdf'
-      - 'pdf_to_factory.py'
+    branches: [ main ]
   workflow_dispatch:
-
+  
 permissions:
   contents: write
 
