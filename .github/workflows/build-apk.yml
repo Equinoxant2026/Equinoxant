@@ -12,9 +12,8 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - run: |
-          chmod +x gradlew || true
-         ./gradlew assembleDebug
+      - run: chmod +x gradlew
+      - run: ./gradlew assembleDebug
       - uses: actions/upload-artifact@v4
         with:
           name: Equinoxant-APK
