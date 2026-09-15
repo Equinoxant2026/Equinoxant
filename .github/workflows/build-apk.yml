@@ -1,4 +1,4 @@
-name: Build APK
+name: Build Ziso Trivia APK
 on:
   push:
     branches: [main]
@@ -12,10 +12,14 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - run: chmod +x gradlew
-      - run: ./gradlew assembleDebug
-      - uses: actions/upload-artifact@v4
+      - name: Build APK
+        run: |
+          ls -la
+          find. -name "gradlew" -type f
+          chmod +x $(find. -name "gradlew" | head -1)
+          $(find. -name "gradlew" | head -1) assembleDebug
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
         with:
-          name: Ziso Trivia-APK
-          path: app/build/outputs/apk/debug/*.apk
-          
+          name: Ziso-Trivia-APK
+          path: "**/build/outputs/apk/debug/*.apk"
