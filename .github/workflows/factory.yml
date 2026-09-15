@@ -1,13 +1,10 @@
 name: Build Questions JSON (Merged Free + AI)
-
 on:
   push:
     branches: [ main ]
   workflow_dispatch:
-  
 permissions:
   contents: write
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -16,32 +13,22 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
-      
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          
-      - name: Install libraries
-        run: pip install pymupdf openai
-          
-      - name: Run factory
-        env:
+      - run: pip install pymupdf openai
+      - env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: python pdf_to_factory.py
-          
-      - name: Upload questions.json as artifact (ALWAYS works)
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: questions-json
           path: assets/questions.json
-          
-      - name: Try to commit back to repo
-        run: |
+      - run: |
           git config user.name "factory-bot"
           git config user.email "bot@equinoxant.com"
           git add assets/questions.json || true
           git commit -m "Auto-build questions.json" || true
           git pull --rebase origin main || git pull origin main
-          git push || echo "Push failed but artifact saved - download it manually"
+          git push || echo "Push failed but artifact saved"
           
