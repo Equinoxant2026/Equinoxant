@@ -13,13 +13,12 @@ jobs:
           distribution: temurin
           java-version: '17'
       - name: Build APK
+        working-directory: ./android
         run: |
-          ls -la
-          find. -name "gradlew" -type f
-          chmod +x $(find. -name "gradlew" | head -1)
-          $(find. -name "gradlew" | head -1) assembleDebug
+          chmod +x gradlew
+       ./gradlew assembleDebug
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: Ziso-Trivia-APK
-          path: "**/build/outputs/apk/debug/*.apk"
+          path: android/app/build/outputs/apk/debug/*.apk
