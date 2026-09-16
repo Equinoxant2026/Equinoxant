@@ -21,3 +21,4 @@ jobs:
         with:
           name: Ziso-Trivia-APK
           path: android/app/build/outputs/apk/debug/*.apk
+          
