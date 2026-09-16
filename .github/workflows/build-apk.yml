@@ -16,9 +16,9 @@ jobs:
         run: chmod +x./android/gradlew
       - name: Build APK
         run: ./android/gradlew assembleDebug
+        working-directory: android
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: Ziso-Trivia-APK
           path: android/app/build/outputs/apk/debug/*.apk
-          
