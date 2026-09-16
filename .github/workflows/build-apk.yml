@@ -12,13 +12,16 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.22.0'
+      - name: Get dependencies
+        run: flutter pub get
       - name: Build APK
-        working-directory: android
-        run: gradle assembleDebug
+        run: flutter build apk --debug
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: Ziso-Trivia-APK
-          path: android/app/build/outputs/apk/debug/*.apk
-          
+          path: build/app/outputs/flutter-apk/app-debug.apk
