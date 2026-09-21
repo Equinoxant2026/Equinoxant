@@ -1,5 +1,5 @@
-name: ziso_trivia
-description: Ziso Trivia - NQF 5 Laptop & TV Repair Battle
+name: Equinoxant
+description: EQUINOXANT
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -23,9 +23,9 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - assets/IMG-20260910-WA7526.jpg
+    - assets/icon.png
 
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: false
-  image_path: "assets/IMG-20260910-WA7526.jpg"
+  image_path: "assets/icon.png"
