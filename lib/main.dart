@@ -37,60 +37,91 @@ class _HomePageState extends State<HomePage> {
   bool isScanning = false;
   bool isTorchOn = false;
   BluetoothDevice? connectedDevice;
+  String selectedMode = "PIEZO"; // NEW
 
-  // FIXED SCAN - THIS IS THE FIX
+  static const String MODE_CHAR_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a9";
+  static const String STATUS_CHAR_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a8";
+  static const String SERVICE_UUID = "4fafc201-1fb5-459e-8fcc-c5c9c331914b";
+
+  Future<void> _askAndSetSensorMode() async {
+    if (connectedDevice == null ||!mounted) return;
+    String? choice = await showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => AlertDialog(
+        title: Text("Choose sensor mode"),
+        content: Text("PIEZO = vibration only (scream-proof)\nMIC = sound only"),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, "PIEZO"), child: Text("PIEZO")),
+          TextButton(onPressed: () => Navigator.pop(context, "MIC"), child: Text("MIC")),
+        ],
+      ),
+    );
+    if (choice == null) choice = "PIEZO";
+
+    try {
+      List<BluetoothService> services = await connectedDevice!.discoverServices();
+      for (var s in services) {
+        for (var c in s.characteristics) {
+          if (c.uuid.toString().toLowerCase() == MODE_CHAR_UUID) {
+            await c.write(utf8.encode(choice));
+            setState(() => selectedMode = choice!);
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Mode set to $choice")));
+            return;
+          }
+        }
+      }
+    } catch (e) {
+      print("Mode write error $e");
+    }
+  }
+
   Future<void> _scanAndConnect() async {
     if (!mounted) return;
     setState(() => isScanning = true);
 
-    // 1. Check Bluetooth is ON
     if (await FlutterBluePlus.adapterState.first!= BluetoothAdapterState.on) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Turn ON Bluetooth first")),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Turn ON Bluetooth first")));
       setState(() => isScanning = false);
       return;
     }
 
     try {
       await FlutterBluePlus.startScan(timeout: Duration(seconds: 10));
-
-      // 2. Listen WITHOUT await for (await for blocks forever)
-      FlutterBluePlus.scanResults.listen((results) async {
+      StreamSubscription? sub;
+      sub = FlutterBluePlus.scanResults.listen((results) async {
         for (ScanResult r in results) {
           String advName = r.advertisementData.advName.toUpperCase();
           String devName = r.device.platformName.toUpperCase();
           String oldName = r.device.name.toUpperCase();
-
           print("Found: adv=$advName | platform=$devName | name=$oldName");
-
           if ((advName.contains("EQUINOXANT") && advName.contains("CHALK")) ||
               (devName.contains("EQUINOXANT") && devName.contains("CHALK")) ||
               (oldName.contains("EQUINOXANT") && oldName.contains("CHALK"))) {
-
             await FlutterBluePlus.stopScan();
+            sub?.cancel();
             try {
               await r.device.connect(autoConnect: false, timeout: Duration(seconds: 10));
             } catch (e) {
               print("Connect error $e");
             }
-
             if (!mounted) return;
             setState(() {
               connectedDevice = r.device;
               isSensorConnected = true;
               isScanning = false;
             });
+            // MERGED HERE - ask mode right after connect, after discovery
+            await Future.delayed(Duration(milliseconds: 500));
+            await _askAndSetSensorMode();
             return;
           }
         }
       });
-
-      // 3. Wait for scan to finish
       await Future.delayed(Duration(seconds: 11));
       await FlutterBluePlus.stopScan();
-
+      sub.cancel();
     } catch (e) {
       print("Scan error: $e");
     }
@@ -115,9 +146,7 @@ class _HomePageState extends State<HomePage> {
       setState(() => isTorchOn =!isTorchOn);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Torch not available: $e")),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Torch not available: $e")));
     }
   }
 
@@ -158,9 +187,13 @@ class _HomePageState extends State<HomePage> {
               if (value == 'torch') {
                 await _toggleTorch();
               }
+              if (value == 'mode' && isSensorConnected) {
+                await _askAndSetSensorMode();
+              }
             },
             itemBuilder: (context) => [
               PopupMenuItem(value: 'bt', child: Text(isSensorConnected? 'Disconnect Sensor' : 'Connect Sensor')),
+              if (isSensorConnected) PopupMenuItem(value: 'mode', child: Text('Change Mode ($selectedMode)')),
               PopupMenuItem(value: 'color', child: Text('Background Colour Picker')),
               PopupMenuItem(value: 'torch', child: Text(isTorchOn? 'Turn OFF Torch' : 'Turn ON Torch')),
             ],
@@ -174,18 +207,24 @@ class _HomePageState extends State<HomePage> {
             if (!isSensorConnected)
               Text("Connect your sensor", style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
             if (isSensorConnected)
-              Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                Icon(Icons.bluetooth_connected, color: Colors.green, size: 30),
-                SizedBox(width: 10),
-                Text("Sensor Connected", style: TextStyle(fontSize: 20, color: Colors.green, fontWeight: FontWeight.bold)),
-              ]),
+              Column(
+                children: [
+                  Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                    Icon(Icons.bluetooth_connected, color: Colors.green, size: 30),
+                    SizedBox(width: 10),
+                    Text("Sensor Connected ($selectedMode)", style: TextStyle(fontSize: 20, color: Colors.green, fontWeight: FontWeight.bold)),
+                  ]),
+                ],
+              ),
             SizedBox(height: 40),
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, padding: EdgeInsets.symmetric(horizontal: 40, vertical: 16)),
-              onPressed: isScanning? null : () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => TimerPage(isSensorConnected: isSensorConnected, bgColor: bgColor, device: connectedDevice)),
-              ),
+              onPressed: isScanning
+                 ? null
+                  : () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => TimerPage(isSensorConnected: isSensorConnected, bgColor: bgColor, device: connectedDevice)),
+                      ),
               child: Text(isScanning? "Scanning..." : "Ready!!!", style: TextStyle(fontSize: 20, color: Colors.white)),
             ),
           ],
@@ -389,25 +428,15 @@ class _TimerPageState extends State<TimerPage> {
           Positioned(left: 30, top: 80, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text("$seconds s", style: TextStyle(fontSize: 80, color: Colors.red, fontWeight: FontWeight.bold)), Text("${ms.toString().padLeft(2, '0')} ms", style: TextStyle(fontSize: 25, color: Colors.red))])),
           Center(child: CustomPaint(size: Size(MediaQuery.of(context).size.width * 0.80, MediaQuery.of(context).size.width * 0.80), painter: ArcPainter(progress: progress, arcColor: _getArcColor(progress)))),
           Positioned(
-            bottom: 60,
-            left: MediaQuery.of(context).size.width / 2 - 20,
-            child: GestureDetector(
-              onTap: () {
-                setState(() {
-                  isPaused =!isPaused;
-                });
-              },
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: actuallyPaused? Colors.grey : Colors.blue,
-                  borderRadius: BorderRadius.circular(4)
-                ),
-                child: Icon(isPaused? Icons.play_arrow : Icons.pause, color: Colors.white)
-              )
-            )
-          ),
+              bottom: 60,
+              left: MediaQuery.of(context).size.width / 2 - 20,
+              child: GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      isPaused =!isPaused;
+                    });
+                  },
+                  child: Container(width: 40, height: 40, decoration: BoxDecoration(color: actuallyPaused? Colors.grey : Colors.blue, borderRadius: BorderRadius.circular(4)), child: Icon(isPaused? Icons.play_arrow : Icons.pause, color: Colors.white)))),
           Positioned(bottom: 20, left: 0, right: 0, child: Center(child: Text("Loop $currentLoop / $totalLoops", style: TextStyle(fontSize: 18)))),
         ],
       ),
@@ -425,13 +454,23 @@ class ArcPainter extends CustomPainter {
     final center = Offset(size.width / 2, size.height);
     final radius = size.width / 2;
     final rect = Rect.fromCircle(center: center, radius: radius);
-    Paint basePaint = Paint()..color = Colors.grey[800]!..strokeWidth = 35..style = PaintingStyle.stroke..strokeCap = StrokeCap.round;
+    Paint basePaint = Paint()
+     ..color = Colors.grey[800]!
+     ..strokeWidth = 35
+     ..style = PaintingStyle.stroke
+     ..strokeCap = StrokeCap.round;
     canvas.drawArc(rect, pi, pi, false, basePaint);
-    Paint progressPaint = Paint()..color = arcColor..strokeWidth = 35..style = PaintingStyle.stroke..strokeCap = StrokeCap.round;
+    Paint progressPaint = Paint()
+     ..color = arcColor
+     ..strokeWidth = 35
+     ..style = PaintingStyle.stroke
+     ..strokeCap = StrokeCap.round;
     canvas.drawArc(rect, pi, pi * progress, false, progressPaint);
     double handAngle = pi - (pi * progress);
     Offset handEnd = Offset(center.dx + radius * cos(handAngle), center.dy - radius * sin(handAngle));
-    Paint handPaint = Paint()..color = Colors.grey..strokeWidth = 30;
+    Paint handPaint = Paint()
+     ..color = Colors.grey
+     ..strokeWidth = 30;
     canvas.drawLine(center, handEnd, handPaint);
   }
   @override
