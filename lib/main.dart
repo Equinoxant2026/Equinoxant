@@ -9,7 +9,6 @@ import 'package:app_settings/app_settings.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  // SAME trick that made WORKS open - kill splash stuck
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: []);
   runApp(const EquinoxantApp());
 }
@@ -39,17 +38,45 @@ class _HomePageState extends State<HomePage> {
   bool isTorchOn = false;
   BluetoothDevice? connectedDevice;
 
+  // FIXED SCAN - THIS IS THE FIX
   Future<void> _scanAndConnect() async {
     if (!mounted) return;
     setState(() => isScanning = true);
+
+    // 1. Check Bluetooth is ON
+    if (await FlutterBluePlus.adapterState.first!= BluetoothAdapterState.on) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Turn ON Bluetooth first")),
+      );
+      setState(() => isScanning = false);
+      return;
+    }
+
     try {
       await FlutterBluePlus.startScan(timeout: Duration(seconds: 10));
-      await for (var results in FlutterBluePlus.scanResults) {
+
+      // 2. Listen WITHOUT await for (await for blocks forever)
+      FlutterBluePlus.scanResults.listen((results) async {
         for (ScanResult r in results) {
-          if (r.device.name.toUpperCase().contains("EQUINOXANT") &&
-              r.device.name.toUpperCase().contains("CHALK")) {
+          String advName = r.advertisementData.advName.toUpperCase();
+          String devName = r.device.platformName.toUpperCase();
+          String oldName = r.device.name.toUpperCase();
+
+          print("Found: adv=$advName | platform=$devName | name=$oldName");
+
+          if ((advName.contains("EQUINOXANT") && advName.contains("CHALK")) ||
+              (devName.contains("EQUINOXANT") && devName.contains("CHALK")) ||
+              (oldName.contains("EQUINOXANT") && oldName.contains("CHALK"))) {
+
             await FlutterBluePlus.stopScan();
-            await r.device.connect();
+            try {
+              await r.device.connect(autoConnect: false, timeout: Duration(seconds: 10));
+            } catch (e) {
+              print("Connect error $e");
+            }
+
+            if (!mounted) return;
             setState(() {
               connectedDevice = r.device;
               isSensorConnected = true;
@@ -58,16 +85,21 @@ class _HomePageState extends State<HomePage> {
             return;
           }
         }
-      }
+      });
+
+      // 3. Wait for scan to finish
+      await Future.delayed(Duration(seconds: 11));
       await FlutterBluePlus.stopScan();
+
     } catch (e) {
       print("Scan error: $e");
     }
+
     if (!mounted) return;
     setState(() => isScanning = false);
     if (!isSensorConnected) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Sensor not found. Check ESP32 is ON")),
+        SnackBar(content: Text("Sensor not found. Check ESP32 is ON and UNPAIRED in phone settings")),
       );
     }
   }
@@ -128,7 +160,7 @@ class _HomePageState extends State<HomePage> {
               }
             },
             itemBuilder: (context) => [
-              PopupMenuItem(value: 'bt', child: Text(isSensorConnected? 'Disconnect Sensor' : 'Bluetooth Settings')),
+              PopupMenuItem(value: 'bt', child: Text(isSensorConnected? 'Disconnect Sensor' : 'Connect Sensor')),
               PopupMenuItem(value: 'color', child: Text('Background Colour Picker')),
               PopupMenuItem(value: 'torch', child: Text(isTorchOn? 'Turn OFF Torch' : 'Turn ON Torch')),
             ],
@@ -258,7 +290,6 @@ class _TimerPageState extends State<TimerPage> {
     try {
       bool isTorchAvailable = await TorchLight.isTorchAvailable();
       if (!isTorchAvailable) return;
-      // GLIMPSE ONCE - single flash at end of loop 2-9
       await TorchLight.enableTorch();
       await Future.delayed(Duration(milliseconds: 120));
       await TorchLight.disableTorch();
@@ -266,7 +297,6 @@ class _TimerPageState extends State<TimerPage> {
   }
 
   void _nextLoop() {
-    // ONLY glimpse from loop 2 to 9
     if (currentLoop >= 2 && currentLoop <= 9) {
       _blinkTorch();
     }
@@ -395,7 +425,6 @@ class ArcPainter extends CustomPainter {
     final center = Offset(size.width / 2, size.height);
     final radius = size.width / 2;
     final rect = Rect.fromCircle(center: center, radius: radius);
-    // INCREASED WIDTH from 30 to 42
     Paint basePaint = Paint()..color = Colors.grey[800]!..strokeWidth = 35..style = PaintingStyle.stroke..strokeCap = StrokeCap.round;
     canvas.drawArc(rect, pi, pi, false, basePaint);
     Paint progressPaint = Paint()..color = arcColor..strokeWidth = 35..style = PaintingStyle.stroke..strokeCap = StrokeCap.round;
